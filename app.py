@@ -2,6 +2,8 @@ import streamlit as st
 import json
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
+import plotly.express as px
 from datetime import datetime
 
 # File paths
@@ -40,7 +42,7 @@ def store_history(response, location):
 last_value = load_last_value()
 st.logo('sagnik-design-logo-color.png', size="large")
 
-st.title("Ping Pong Ball Last Location Updation App")
+st.title("🏓 Ping Pong Ball Last Location Tracker")
 st.write(f"**Last Stored Value:** {last_value}")
 
 # User selection for surety
@@ -72,6 +74,9 @@ history = load_history()
 if history:
     df = pd.DataFrame(history)
 
+    # Convert timestamp column to datetime for better processing
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+
     # Table 1: Location Summary
     location_counts = df["location"].value_counts().reset_index()
     location_counts.columns = ["Location", "Times Stored"]
@@ -82,5 +87,27 @@ if history:
     # Table 2: Full Data Input History
     st.write("### 📜 Data Input History")
     st.table(df)
+
+    # 📊 **Bar Chart: Location Frequency**
+    st.write("### 📊 Location Count Bar Chart")
+    fig_bar = px.bar(location_counts, x="Location", y="Times Stored", text="Times Stored",
+                        labels={"Times Stored": "Number of Times Stored"},
+                        title="📌 Frequency of Locations Stored",
+                        color="Location")
+    st.plotly_chart(fig_bar)
+
+    # 📈 **Line Chart: Entries Over Time**
+    df["count"] = range(1, len(df) + 1)  # Assign incremental count for tracking
+    st.write("### 📈 Data Input Over Time")
+    fig_line = px.line(df, x="timestamp", y="count", markers=True, title="📌 Data Input Timeline")
+    st.plotly_chart(fig_line)
+
+    # 📉 **Matplotlib Pie Chart**
+    st.write("### 🍕 Pie Chart: Location Distribution")
+    fig_pie, ax = plt.subplots()
+    ax.pie(location_counts["Times Stored"], labels=location_counts["Location"], autopct='%1.1f%%', startangle=90)
+    ax.axis("equal")
+    st.pyplot(fig_pie)
+
 else:
     st.write("No location history recorded yet.")
